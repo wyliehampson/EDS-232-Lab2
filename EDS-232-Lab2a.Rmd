@@ -1,5 +1,5 @@
 ---
-title: "EDS-232-Lab2a"
+title: "EDS-232-Lab2"
 output: html_document
 ---
 
@@ -8,7 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Lab 2: Communities
-## Lab2a: Communities - Clusters
+## Lab 2a: Communities - Clusters
 
 ### Clustering
 
@@ -352,12 +352,199 @@ fviz_dend(
   rect_border = "jco",
   k_colors = "jco")
 ```
+## Lab 2b: Ordination
 
+### Principal Components Analysis (PCA)
 
+#### Prerequisites
 
+```{r}
+# load R packages
+librarian::shelf(
+  dplyr, ggplot2, h2o)
+```
 
+```{r}
+# set seed for reproducible results
+set.seed(42)
 
+# get data
+url <- "https://koalaverse.github.io/homlr/data/my_basket.csv"
+my_basket <- readr::read_csv(url)
+dim(my_basket)
+```
 
+```{r}
+my_basket
+```
 
+#### Performing PCA in R
 
+```{r}
+h2o.no_progress()  # turn off progress bars for brevity
+h2o.init(max_mem_size = "5g")  # connect to H2O instance
+```
+
+```{r}
+# convert data to h2o object
+my_basket.h2o <- as.h2o(my_basket)
+
+# run PCA
+my_pca <- h2o.prcomp(
+  training_frame = my_basket.h2o,
+  pca_method = "GramSVD",
+  k = ncol(my_basket.h2o), 
+  transform = "STANDARDIZE", 
+  impute_missing = TRUE,
+  max_runtime_secs = 1000)
+my_pca
+```
+
+```{r}
+my_pca@model$eigenvectors %>% 
+  as.data.frame() %>% 
+  mutate(feature = row.names(.)) %>%
+  ggplot(aes(pc1, reorder(feature, pc1))) +
+  geom_point()
+```
+
+```{r}
+my_pca@model$eigenvectors %>% 
+  as.data.frame() %>% 
+  mutate(feature = row.names(.)) %>%
+  ggplot(aes(pc1, pc2, label = feature)) +
+  geom_text()
+```
+
+#### Eigenvalue criterion
+
+```{r}
+# Compute eigenvalues
+eigen <- my_pca@model$importance["Standard deviation", ] %>%
+  as.vector() %>%
+  .^2
+  
+# Sum of all eigenvalues equals number of variables
+sum(eigen)
+```
+
+```{r}
+## [1] 42
+
+# Find PCs where the sum of eigenvalues is greater than or equal to 1
+which(eigen >= 1)
+```
+
+```{r}
+# Extract PVE and CVE
+ve <- data.frame(
+  PC  = my_pca@model$importance %>% seq_along(),
+  PVE = my_pca@model$importance %>% .[2,] %>% unlist(),
+  CVE = my_pca@model$importance %>% .[3,] %>% unlist())
+
+# Plot PVE and CVE
+ve %>%
+  tidyr::gather(metric, variance_explained, -PC) %>%
+  ggplot(aes(PC, variance_explained)) +
+  geom_point() +
+  facet_wrap(~ metric, ncol = 1, scales = "free")
+```
+
+```{r}
+# How many PCs required to explain at least 75% of total variability
+min(which(ve$CVE >= 0.75))
+```
+
+```{r}
+# Screee plot criterion
+data.frame(
+  PC  = my_pca@model$importance %>% seq_along,
+  PVE = my_pca@model$importance %>% .[2,] %>% unlist()) %>%
+  ggplot(aes(PC, PVE, group = 1, label = PC)) +
+  geom_point() +
+  geom_line() +
+  geom_text(nudge_y = -.002)
+```
+
+### Non-metric MultiDimensional Scaling (NMDS)
+
+#### Unconstrained Ordination on Species
+
+```{r}
+# load R packages
+librarian::shelf(
+  vegan, vegan3d)
+```
+
+```{r}
+# vegetation and environment in lichen pastures from Vare et al (1995)
+data("varespec") # species
+data("varechem") # chemistry
+
+varespec %>% tibble()
+```
+
+```{r}
+vare.dis <- vegdist(varespec)
+vare.mds0 <- monoMDS(vare.dis)
+stressplot(vare.mds0)
+```
+
+```{r}
+ordiplot(vare.mds0, type = "t")
+```
+
+```{r}
+vare.mds <- metaMDS(varespec, trace = FALSE)
+vare.mds
+```
+
+```{r}
+plot(vare.mds, type = "t")
+```
+
+#### Overlay with Environment
+
+```{r}
+ef <- envfit(vare.mds, varechem, permu = 999)
+ef
+```
+
+```{r}
+plot(vare.mds, display = "sites")
+plot(ef, p.max = 0.05)
+```
+
+```{r}
+ef <- envfit(vare.mds ~ Al + Ca, data = varechem)
+plot(vare.mds, display = "sites")
+plot(ef)
+
+tmp <- with(varechem, ordisurf(vare.mds, Al, add = TRUE))
+ordisurf(vare.mds ~ Ca, data=varechem, add = TRUE, col = "green4")
+```
+
+#### Constrained Ordination on Species and Environment
+
+```{r}
+# ordinate on species constrained by three soil elements
+vare.cca <- cca(varespec ~ Al + P + K, varechem)
+vare.cca
+```
+
+```{r}
+# plot ordination
+plot(vare.cca)
+```
+
+```{r}
+# plot 3 dimensions
+ordiplot3d(vare.cca, type = "h")
+```
+
+```{r}
+if (interactive()){
+  ordirgl(vare.cca)
+}
+```
 
