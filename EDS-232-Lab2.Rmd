@@ -235,7 +235,7 @@ sites_bray
 
 **Question: In your own words, how does Bray Curtis differ from Euclidean distance? See sites_euclidean versus sites_bray from lab code, slides from Lecture 05. Clustering and reading Chapter 8 of Kindt and Coe (2005).**
 
-*Bray-Curtis and Euclidean distance are both measurements of how similar two sites are to one another. Euclidean distance is an actual measurement that doesn't have any boundries, and Bray-Curtis is just a scale of how similar two sites are from 0 to 1, with 1 being completely dissimilar and 0 being identical.*
+*Bray-Curtis and Euclidean distance are both measurements of how similar two sites are to one another. Euclidean distance is an actual measurement of distance between 2 points, and Bray-Curtis is just a scale of how similar two sites are from 0 to 1, with 1 being completely dissimilar and 0 being identical. Bray-Curtis depends on the sum of lowest counts of shared species between sites over total species.*
 
 ##### Agglomerative hierarchical clustering on `dune`
 
@@ -271,7 +271,7 @@ hc2$ac
 
 **Question: In your own words how does hclust() differ from agnes()? See HOMLR 21.3.1 Agglomerative hierarchical clustering and help documentation (?hclust(), ?agnes()).**
 
-*hclust() and agnes() are very similar to each other, the only difference is that agnes() you also get the agglomerative coefficent, which measures the amount of clustering structure found.*
+*hclust() and agnes() are very similar to each other, the only difference is that with agnes() you also get the agglomerative coefficent, which measures the amount of clustering structure found. Values close to 1 suggest more balanced clusters.*
 
 ```{r}
 # Dendrogram plot of hc2
@@ -321,7 +321,7 @@ hc4$dc
 
 **Question: In your own words how does agnes() differ from diana()? See HOMLR 21.3.1 Agglomerative hierarchical clustering, slides from Lecture 05. Clustering and help documentation (?agnes(), ?diana()).**
 
-*agnes() and diana() are the opposite of eachother, but have similar functionality. Agnes starts from the bottom and goes up, meaning that it looks at each site as a leaf, then clusters it to other sites based on similarities. diana() is top down, meaning it starts at the root of all of the sites, and separates them based on disimilarities until each site is a leaf.*
+*agnes() and diana() are the opposite of eachother, but have similar functionality. Agnes starts from the bottom and goes up, meaning that it looks at each site as a leaf, then clusters it to other sites based on similarities, then gives an agglomerative coefficient. diana() is top down, meaning it starts at the root of all of the sites, and separates them based on disimilarities until each site is a leaf, then gives a divisive coefficient.*
 
 ##### Determining optimal clusters
 
@@ -439,7 +439,7 @@ my_pca
 
 **Question: How many inital principal components are chosen with respect to dimensions of the input data? See HOMLR 17.4 Performing PCA in R.**
 
-*There are the same amount of prinicpal components as there are features in the data, so in this case ncol(my_basket.h2o)*
+*There are the same amount of prinicpal components as there are features in the data, so in this case `r ncol(my_basket.h2o)`*
 
 ```{r}
 my_pca@model$eigenvectors %>% 
@@ -557,7 +557,7 @@ stressplot(vare.mds0)
 
 **Question: The “stress” in a stressplot represents the difference between the observed inpnut distance versus the fitted ordination distance. How much better is the non-metric (i.e., NMDS) fit versus a linear fit (as with PCA) in terms of \(R^2\)?**
 
-*The R^2 value with the non-metric fit is 0.99, and the R^2 value with the linear fit is 0.943.*
+*The R^2 value with the non-metric fit is 0.99, and the R^2 value with the linear fit is 0.943. The NMDS fit is better by about 5%.*
 
 ```{r}
 ordiplot(vare.mds0, type = "t")
